@@ -1,19 +1,25 @@
+import time
 import tkinter as tk
 from tkinter import filedialog
 from enum import Enum
 from tkinter import ttk
 
+import threading
+import queue
+
+from documents.ExcelTranslator import ExcelTranslator
+from utils import file_utils
+
 
 class MainUI:
     __root = tk.Tk()
+    __thread = None
 
     def __init__(self):
-
         current_row = 0
-
         root = self.__root
         root.geometry(self.window_size(60, 50))
-        isRunning = False
+        is_running = False
         # 创建文件选择器所在的Frame组件，并通过grid()进行布局管理
         file_frame = tk.Frame(root)
         file_frame.grid(row=current_row, column=0, sticky="w")
@@ -82,14 +88,14 @@ class MainUI:
 
         self.button_status_text = tk.StringVar(value="开始")
         op_button = ttk.Button(
-            status_frame, textvariable=self.button_status_text, command=self.change_status)
+            status_frame, textvariable=self.button_status_text, command=self.click)
         op_button.pack(side=tk.LEFT, padx=Padding.START.value)
 
         # for global use
         self.file_chooser_entry = file_chooser_entry
         self.source = source_lang_var
         self.to = to_lang_var
-        self.isRunning = isRunning
+        self.is_running = is_running
 
         root.mainloop()
 
@@ -110,26 +116,43 @@ class MainUI:
         y = (screen_height - height) // 2
         return f'{width}x{height}+{x}+{y}'
 
-    def change_status(self):
+    def click(self):
         status_text = self.button_status_text
-        if self.isRunning:
+        if self.is_running:
             status_text.set("开始")
-            self.isRunning = False
+            self.is_running = False
         else:
             input_file = self.file_chooser_entry.get()
             source = self.source.get()
             to = self.to.get()
-            print(f"file:{input_file}   {source}->{to}")
             status_text.set("停止")
-            self.isRunning = True
+            self.is_running = True
+            self.__thread = threading.Thread(target=self.translate,
+                                             args=(input_file,
+                                                   file_utils.make_out_file_path(input_file),
+                                                   source,
+                                                   to))
+            self.__thread.start()
+        print(self.__thread.is_alive())
+        print(self.__thread.isAlive())
+
+    def translate(self, input_file, output_file, source_lang, to_lang):
+        test(input_file, output_file)
+        self.button_status_text.set("完成")
+        self.is_running = False
+
+
+def test(source, output):
+    test_index = 0
+    while test_index < 5:
+        test_index += 1
+        print(test_index)
+        time.sleep(1)
+    return 'done'
 
 
 class Padding(Enum):
-    START = 10,
-    END = 10,
-    TOP = 0,
-    BOTTOM = 0
-
-
-if __name__ == "__main__":
-    MainUI()
+    START = 10.0,
+    END = 10.0,
+    TOP = 0.0,
+    BOTTOM = 0.0
